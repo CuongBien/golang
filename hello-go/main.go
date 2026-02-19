@@ -1,20 +1,38 @@
-package main // 1. Khai báo package
+package main
 
-import "fmt" // 2. Import thư viện standard của Go
+import (
+	"fmt"
+	"sync"
+)
 
-// 3. Hàm main là điểm bắt đầu của chương trình (giống C++)
+var results = make(chan float64, 10)
+
 func main() {
-	c := Circle{
-		radius: 2,
+	wg := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(h float64, w float64) {
+			defer wg.Done() 
+			r := Rectangle {
+				height: h,
+				width: w,
+			}
+			results <- r.Area()
+		}(float64(i + 2), float64(i + 1))
 	}
 
-	r := Rectangle{
-		height: 2,
-		width: 1,
+	// Kỹ thuật quan trọng: Chạy một Goroutine riêng để đợi và đóng channel
+	// Nếu không đóng channel, vòng lặp range ở dưới sẽ bị deadlock
+	go func() {
+		wg.Wait()
+		close(results) 
+	}()
+	
+	var totalArea float64
+
+	for area := range results {
+		totalArea += area
 	}
 
-	PrintArea(r)
-	PrintArea(c)
-
-	fmt.Printf("Hello\n")
+	fmt.Printf("Total area: %.2f\n", totalArea)
 }
